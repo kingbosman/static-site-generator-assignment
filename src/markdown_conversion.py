@@ -18,6 +18,16 @@ def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     return nodes
 
 
+def extract_markdown_images(rawMarkdownString: str) -> list[TextNode]:
+    pass
+    # see below regex to find it
+    #!\[(.*?)\](\()([a-zA-Z0-9:/.#])+\)
+
+
+def extraxt_markdown_links(rawMarkdownString: str) -> list[TextNode]:
+    pass
+
+
 def split_nodes_delimiter(
     old_nodes: list[TextNode], delimiter: str, text_type: TextType
 ) -> list[TextNode]:
@@ -39,29 +49,24 @@ def recursive_nodes_demimiter_split(
     current_list: list[TextNode] = [],
 ) -> list[TextNode]:
     split = text.split(delimiter, 2)
+
+    # Should always be of length 1 or 3
     if len(split) == 2:
         raise ValueError("Invalid markdown syntax")
 
-    if len(split) <= 1:
+    # Nothing to split, conversion done
+    if len(split) == 1:
         current_list.append(TextNode(split[0], TextType.TEXT))
         return current_list
 
-    if split[0] == "":
-        # bold first word
-        current_list.append(TextNode(split[1], text_type))
-        return recursive_nodes_demimiter_split(
-            split[2], delimiter, text_type, current_list
-        )
+    # second is always of type textType
+    if split[0] != "":
+        current_list.append(TextNode(split[0], TextType.TEXT))
+    current_list.append(TextNode(split[1], text_type))
 
-    current_list.extend(
-        [
-            TextNode(split[0], TextType.TEXT),
-            TextNode(split[1], text_type),
-        ]
-    )
+    # is last element is empty conversion is done
+    if split[2] == "":
+        return current_list
 
-    if split[2] != "":
-        return recursive_nodes_demimiter_split(
-            split[2], delimiter, text_type, current_list
-        )
-    return current_list
+    # Continue splitting remaining string
+    return recursive_nodes_demimiter_split(split[2], delimiter, text_type, current_list)
