@@ -1,3 +1,4 @@
+import re
 from textnode import TextNode, TextType
 
 
@@ -18,16 +19,6 @@ def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     return nodes
 
 
-def extract_markdown_images(rawMarkdownString: str) -> list[TextNode]:
-    pass
-    # see below regex to find it
-    #!\[(.*?)\](\()([a-zA-Z0-9:/.#])+\)
-
-
-def extraxt_markdown_links(rawMarkdownString: str) -> list[TextNode]:
-    pass
-
-
 def split_nodes_delimiter(
     old_nodes: list[TextNode], delimiter: str, text_type: TextType
 ) -> list[TextNode]:
@@ -37,12 +28,12 @@ def split_nodes_delimiter(
             newNodes.append(old_node)
             continue
         newNodes.extend(
-            recursive_nodes_demimiter_split(old_node.text, delimiter, text_type, [])
+            recursive_nodes_delimiter_split(old_node.text, delimiter, text_type, [])
         )
     return newNodes
 
 
-def recursive_nodes_demimiter_split(
+def recursive_nodes_delimiter_split(
     text: str,
     delimiter: str,
     text_type: TextType,
@@ -69,4 +60,61 @@ def recursive_nodes_demimiter_split(
         return current_list
 
     # Continue splitting remaining string
-    return recursive_nodes_demimiter_split(split[2], delimiter, text_type, current_list)
+    return recursive_nodes_delimiter_split(split[2], delimiter, text_type, current_list)
+
+
+def extract_markdown_images(rawMarkdownString: str) -> list[tuple[str, str]]:
+    return re.findall(r"!\[(.*?)\]\((.*?)\)", rawMarkdownString)
+
+
+def extraxt_markdown_links(rawMarkdownString: str) -> list[tuple[str, str]]:
+    return re.findall(r"(?<!!)\[(.*?)\]\((.*?)\)", rawMarkdownString)
+
+
+def split_nodes_images_and_links(
+    old_nodes: list[TextNode], text_type: TextType
+) -> list[TextNode]:
+    newNodes = []
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            newNodes.append(old_node)
+            continue
+        newNodes.extend(
+            recursive_nodes_images_links_split(old_node.text, text_type, [])
+        )
+    return newNodes
+
+
+def recursive_nodes_images_links_split(
+    text: str, text_type: TextType, current_list: list[TextNode]
+) -> list[TextNode]:
+    match text_type:
+        case TextType.IMAGE:
+            intances = extract_markdown_images(text)
+            appendix = "!"
+        case TextType.LINK:
+            intances = extraxt_markdown_links(text)
+            appendix = ""
+        case _:
+            raise ValueError("Unsupported TextType")
+
+    # conversion done no more instances
+    if len(intances) == 0:
+        current_list.append(TextNode(text, TextType.TEXT))
+        return current_list
+
+    altText = intances[0][0]
+    url = intances[0][1]
+    split = text.split(f"{appendix}[{altText}]({url})")
+
+    # Second is the image, always
+    if split[0] != "":
+        current_list.append(TextNode(split[0], TextType.TEXT))
+    current_list.append(TextNode(altText, text_type, url))
+
+    # if last element is empty conversion is done
+    if split[1] == "":
+        return current_list
+
+    # Continue splitting
+    return recursive_nodes_images_links_split(split[1], text_type, current_list)
