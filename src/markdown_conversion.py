@@ -4,7 +4,7 @@ from textnode import TextNode, TextType
 
 # TODO: later at end of project support also for nested attributes
 # so a bold can also be italic and vice versa etc
-# do  this by finding the next instance of all delims instead
+# do  this by finding the next instance of all delims/links/image instead
 # instead of going per delim
 def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     nodes = [TextNode(rawMarkdownString, TextType.TEXT)]
@@ -16,6 +16,8 @@ def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
 
     for ttype, delim in delimiters.items():
         nodes = split_nodes_delimiter(nodes, delim, ttype)
+    nodes = split_nodes_images_and_links(nodes, TextType.IMAGE)
+    nodes = split_nodes_images_and_links(nodes, TextType.LINK)
     return nodes
 
 

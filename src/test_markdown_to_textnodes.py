@@ -77,6 +77,40 @@ class TestMarkdownToTextnodes(unittest.TestCase):
         ]
         self.assertEqual(textnodes, expectedNodes)
 
+    def test_image_from_text(self):
+        string = "text at the start and ![image text](https://image.png)"
+        textnodes = markdown_to_textnodes(string)
+        expectedNodes = [
+            TextNode("text at the start and ", TextType.TEXT),
+            TextNode("image text", TextType.IMAGE, "https://image.png"),
+        ]
+        self.assertEqual(textnodes, expectedNodes)
+
+    def test_link_from_text(self):
+        string = "text at the start and [link text](https://link.com)"
+        textnodes = markdown_to_textnodes(string)
+        expectedNodes = [
+            TextNode("text at the start and ", TextType.TEXT),
+            TextNode("link text", TextType.LINK, "https://link.com"),
+        ]
+        self.assertEqual(textnodes, expectedNodes)
+
+    def test_delims_links_images_from_text(self):
+        string = "**bold** text and _italic_ text but also a `code` block. We have an ![image](https://image.png) on it finally follow this [link](https://www.link.com)"
+        textnodes = markdown_to_textnodes(string)
+        expectedNodes = [
+            TextNode("bold", TextType.BOLD),
+            TextNode(" text and ", TextType.TEXT),
+            TextNode("italic", TextType.ITALIC),
+            TextNode(" text but also a ", TextType.TEXT),
+            TextNode("code", TextType.CODE),
+            TextNode(" block. We have an ", TextType.TEXT),
+            TextNode("image", TextType.IMAGE, "https://image.png"),
+            TextNode(" on it finally follow this ", TextType.TEXT),
+            TextNode("link", TextType.LINK, "https://www.link.com"),
+        ]
+        self.assertListEqual(textnodes, expectedNodes)
+
     def test_extract_image_string_start(self):
         string = "![image text](https://image.png) and some text here"
         images = extract_markdown_images(string)
