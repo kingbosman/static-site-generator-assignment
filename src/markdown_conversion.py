@@ -20,17 +20,14 @@ def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     nodes = split_nodes_images_and_links(nodes, TextType.LINK)
     return nodes
 
+
 def markdown_to_blocks(rawMarkdownString: str) -> list[str]:
-    #split per line and strip
-    blocks = rawMarkdownString.split("\n\n")
-    blocks = list(map(str.strip, blocks))
-
-    # find newline whitespaces and replace
-    blocks = [re.sub("\\n\\s+", "\n", block) for block in blocks]
-    # remove empty blocks from list
-    blocks = [block for block in blocks if block != ""]
-
-    return blocks
+    # split per empty line, replace whitespaces after newline and strip
+    return [
+        cleaned
+        for block in rawMarkdownString.split("\n\n")
+        if (cleaned := re.sub(r"\n\s+", "\n", block).strip())
+    ]
 
 
 def split_nodes_delimiter(
@@ -132,4 +129,3 @@ def recursive_nodes_images_links_split(
 
     # Continue splitting
     return recursive_nodes_images_links_split(split[1], text_type, current_list)
-
