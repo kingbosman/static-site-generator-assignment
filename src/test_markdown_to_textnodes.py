@@ -3,6 +3,7 @@ import unittest
 from markdown_conversion import (
     extract_markdown_images,
     extraxt_markdown_links,
+    markdown_to_blocks,
     markdown_to_textnodes,
     split_nodes_images_and_links,
 )
@@ -221,6 +222,50 @@ class TestMarkdownToTextnodes(unittest.TestCase):
                 TextNode("second link", TextType.LINK, "https://link2.com"),
             ],
             new_nodes,
+        )
+
+    def test_markdown_to_blocks(self):
+        md = """
+            This is **bolded** paragraph
+
+            This is another paragraph with _italic_ text and `code` here
+            This is the same paragraph on a new line
+
+            - This is a list
+            - with items
+            """
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
+        )
+
+    def test_empty_markdown_to_blocks(self):
+        blocks = markdown_to_blocks("")
+        self.assertEqual([], blocks)
+
+    def test_multiple_new_lines_between_blocks(self):
+        md = """
+            This is **bolded** paragraph
+
+
+
+            This is another paragraph with _italic_ text and `code` here
+            This is the same paragraph on a new line
+
+
+            """
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+            ],
         )
 
     if __name__ == "__main__":
