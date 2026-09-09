@@ -1,6 +1,6 @@
-import enum
 import re
-from textnode import BlockType, TextNode, TextType
+from textnode import TextNode
+from enums import TextType, BlockType
 
 
 # TODO: later at end of project support also for nested attributes

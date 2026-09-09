@@ -1,4 +1,5 @@
-from textnode import TextNode, TextType
+from enums import TextType
+from textnode import TextNode
 
 
 def main():

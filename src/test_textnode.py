@@ -1,6 +1,7 @@
 from typing import Optional
 import unittest
-from textnode import TextNode, TextType
+from enums import TextType
+from textnode import TextNode
 
 
 class AnotherObject:

@@ -8,7 +8,8 @@ from markdown_conversion import (
     markdown_to_textnodes,
     split_nodes_images_and_links,
 )
-from textnode import BlockType, TextNode, TextType
+from textnode import TextNode
+from enums import TextType, BlockType
 
 
 class TestMarkdownToTextnodes(unittest.TestCase):
