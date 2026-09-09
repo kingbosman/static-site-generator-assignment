@@ -1,5 +1,6 @@
+import enum
 import re
-from textnode import TextNode, TextType
+from textnode import BlockType, TextNode, TextType
 
 
 # TODO: later at end of project support also for nested attributes
@@ -19,15 +20,6 @@ def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     nodes = split_nodes_images_and_links(nodes, TextType.IMAGE)
     nodes = split_nodes_images_and_links(nodes, TextType.LINK)
     return nodes
-
-
-def markdown_to_blocks(rawMarkdownString: str) -> list[str]:
-    # split per empty line, replace whitespaces after newline and strip
-    return [
-        cleaned
-        for block in rawMarkdownString.split("\n\n")
-        if (cleaned := re.sub(r"\n\s+", "\n", block).strip())
-    ]
 
 
 def split_nodes_delimiter(
@@ -129,3 +121,44 @@ def recursive_nodes_images_links_split(
 
     # Continue splitting
     return recursive_nodes_images_links_split(split[1], text_type, current_list)
+
+
+def markdown_to_blocks(rawMarkdownString: str) -> list[str]:
+    # split per empty line and strip ignore empty blocks
+    return [
+        cleaned
+        for block in rawMarkdownString.split("\n\n")
+        if (cleaned := block.strip())
+    ]
+
+
+def block_to_blocktype(markdown: str) -> BlockType:
+    if re.search(r"(^#{1,6}+ ).+", markdown):
+        return BlockType.HEADING
+    if re.search(r"^(`{3}\n)(.|\n)+?(\n`{3})$", markdown):
+        return BlockType.CODE
+
+    lineSplit = markdown.split("\n")
+
+    currentBlockType = BlockType.PARAGRAPH
+    if re.search(r"(^>).+", markdown):
+        currentBlockType = BlockType.QUOTE
+    if re.search(r"(- ).+", markdown):
+        currentBlockType = BlockType.UNORDERED_LIST
+    if re.search(r"(1. .+\n)", markdown):
+        currentBlockType = BlockType.ORDERED_LIST
+    for index, line in enumerate(lineSplit[1:], 1):
+        match currentBlockType:
+            case BlockType.PARAGRAPH:
+                return BlockType.PARAGRAPH
+            case BlockType.QUOTE:
+                if not re.search(r"(^>).+", line):
+                    return BlockType.PARAGRAPH
+            case BlockType.UNORDERED_LIST:
+                if not re.search(r"(- ).+", line):
+                    return BlockType.PARAGRAPH
+            case BlockType.ORDERED_LIST:
+                if not re.search(rf"({index+1}. .+)", line):
+                    return BlockType.PARAGRAPH
+
+    return currentBlockType

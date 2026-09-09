@@ -1,13 +1,14 @@
 import unittest
 
 from markdown_conversion import (
+    block_to_blocktype,
     extract_markdown_images,
     extraxt_markdown_links,
     markdown_to_blocks,
     markdown_to_textnodes,
     split_nodes_images_and_links,
 )
-from textnode import TextNode, TextType
+from textnode import BlockType, TextNode, TextType
 
 
 class TestMarkdownToTextnodes(unittest.TestCase):
@@ -226,14 +227,14 @@ class TestMarkdownToTextnodes(unittest.TestCase):
 
     def test_markdown_to_blocks(self):
         md = """
-            This is **bolded** paragraph
+This is **bolded** paragraph
 
-            This is another paragraph with _italic_ text and `code` here
-            This is the same paragraph on a new line
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
 
-            - This is a list
-            - with items
-            """
+- This is a list
+- with items
+"""
         blocks = markdown_to_blocks(md)
         self.assertEqual(
             blocks,
@@ -250,15 +251,15 @@ class TestMarkdownToTextnodes(unittest.TestCase):
 
     def test_multiple_new_lines_between_blocks(self):
         md = """
-            This is **bolded** paragraph
+This is **bolded** paragraph
 
 
 
-            This is another paragraph with _italic_ text and `code` here
-            This is the same paragraph on a new line
+This is another paragraph with _italic_ text and `code` here
+This is the same paragraph on a new line
 
 
-            """
+"""
         blocks = markdown_to_blocks(md)
         self.assertEqual(
             blocks,
@@ -268,5 +269,78 @@ class TestMarkdownToTextnodes(unittest.TestCase):
             ],
         )
 
-    if __name__ == "__main__":
-        unittest.main()
+    def test_block_to_blocktype_paragraph(self):
+        markdown = """This is a regular paragraph
+I even have multiple lines
+Amazing!
+- very cool"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+    def test_block_to_blocktype_heading(self):
+        markdown = "## I am a heading!"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.HEADING)
+        markdown = "# I am a heading!"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.HEADING)
+
+    def test_block_to_blocktype_invalid_heading(self):
+        markdown = "######## This is not valid"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+        markdown = "##This is not valid"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+        markdown = "This is not valid"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+    def test_block_to_blocktype_code(self):
+        markdown = """```
+Hello I am inside a code block
+very cool
+```"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.CODE)
+
+    def test_block_to_blocktype_quote(self):
+        markdown = """> I am a quote
+> with multiple lines!"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.QUOTE)
+        markdown = "> quote on single line"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.QUOTE)
+        markdown = ">quote on single line space not required"
+        self.assertEqual(block_to_blocktype(markdown), BlockType.QUOTE)
+
+    def test_block_to_blocktype_unordered_list(self):
+        markdown = """- I am an item
+- so am I!"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.UNORDERED_LIST)
+
+    def test_block_to_blocktype_ordered_list(self):
+        markdown = """1. I am the first
+2. Then I am second"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.ORDERED_LIST)
+
+    def test_block_to_blocktype_invalid_ordered_list(self):
+        markdown = """1. I am the first
+2. Then I am second
+4. Where is three? im invalid now"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+        markdown = """1.I am the first
+2.Then I am second but wait we need spaces"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+    def test_block_to_blocktype_invalid_unordered_list(self):
+        markdown = """- I am an item
+-so am I! I forgot a space"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+        markdown = """- I am an item
+- so am I! I forgot a space
+uh oh I dont belong"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+    def test_block_to_blocktype_invalid_quote(self):
+        markdown = """> super quote
+I forgot my > sign"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.PARAGRAPH)
+
+
+if __name__ == "__main__":
+    unittest.main()
