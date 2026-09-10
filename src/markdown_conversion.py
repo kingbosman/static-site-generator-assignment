@@ -3,20 +3,11 @@ from textnode import TextNode
 from enums import TextType, BlockType
 
 
-# TODO: later at end of project support also for nested attributes
-# so a bold can also be italic and vice versa etc
-# do  this by finding the next instance of all delims/links/image instead
-# instead of going per delim
 def markdown_to_textnodes(rawMarkdownString: str) -> list[TextNode]:
     nodes = [TextNode(rawMarkdownString, TextType.TEXT)]
-    delimiters = {
-        TextType.BOLD: "**",
-        TextType.CODE: "`",
-        TextType.ITALIC: "_",
-    }
-
-    for ttype, delim in delimiters.items():
-        nodes = split_nodes_delimiter(nodes, delim, ttype)
+    nodes = split_nodes_delimiter(nodes, "**", TextType.BOLD)
+    nodes = split_nodes_delimiter(nodes, "`", TextType.CODE)
+    nodes = split_nodes_delimiter(nodes, "_", TextType.ITALIC)
     nodes = split_nodes_images_and_links(nodes, TextType.IMAGE)
     nodes = split_nodes_images_and_links(nodes, TextType.LINK)
     return nodes
@@ -30,40 +21,22 @@ def split_nodes_delimiter(
         if old_node.text_type != TextType.TEXT:
             newNodes.append(old_node)
             continue
-        newNodes.extend(
-            recursive_nodes_delimiter_split(old_node.text, delimiter, text_type, [])
-        )
+
+        split = old_node.text.split(delimiter)
+
+        # Should always be of length 1 or 3
+        if len(split) % 2 == 0:
+            raise ValueError("Invalid markdown syntax")
+
+        for index, part in enumerate(split):
+            if part == "":
+                continue
+            if index % 2 == 1:
+                newNodes.append(TextNode(part, text_type))
+                continue
+            newNodes.append(TextNode(part, TextType.TEXT))
+
     return newNodes
-
-
-def recursive_nodes_delimiter_split(
-    text: str,
-    delimiter: str,
-    text_type: TextType,
-    current_list: list[TextNode] = [],
-) -> list[TextNode]:
-    split = text.split(delimiter, 2)
-
-    # Should always be of length 1 or 3
-    if len(split) == 2:
-        raise ValueError("Invalid markdown syntax")
-
-    # Nothing to split, conversion done
-    if len(split) == 1:
-        current_list.append(TextNode(split[0], TextType.TEXT))
-        return current_list
-
-    # second is always of type textType
-    if split[0] != "":
-        current_list.append(TextNode(split[0], TextType.TEXT))
-    current_list.append(TextNode(split[1], text_type))
-
-    # is last element is empty conversion is done
-    if split[2] == "":
-        return current_list
-
-    # Continue splitting remaining string
-    return recursive_nodes_delimiter_split(split[2], delimiter, text_type, current_list)
 
 
 def extract_markdown_images(rawMarkdownString: str) -> list[tuple[str, str]]:
@@ -82,45 +55,34 @@ def split_nodes_images_and_links(
         if old_node.text_type != TextType.TEXT:
             newNodes.append(old_node)
             continue
-        newNodes.extend(
-            recursive_nodes_images_links_split(old_node.text, text_type, [])
-        )
+
+        originalText = old_node.text
+        match text_type:
+            case TextType.IMAGE:
+                instances = extract_markdown_images(originalText)
+                prefix = "!"
+            case TextType.LINK:
+                instances = extraxt_markdown_links(originalText)
+                prefix = ""
+            case _:
+                raise ValueError("Unsupported TextType")
+
+        for instance in instances:
+            altText = instance[0]
+            url = instance[1]
+            split = originalText.split(f"{prefix}[{altText}]({url})")
+
+            # Second is the text_type, always
+            if split[0] != "":
+                newNodes.append(TextNode(split[0], TextType.TEXT))
+            newNodes.append(TextNode(altText, text_type, url))
+            originalText = split[1]
+        if originalText != "":
+            newNodes.append(TextNode(originalText, TextType.TEXT))
     return newNodes
 
 
-def recursive_nodes_images_links_split(
-    text: str, text_type: TextType, current_list: list[TextNode]
-) -> list[TextNode]:
-    match text_type:
-        case TextType.IMAGE:
-            intances = extract_markdown_images(text)
-            appendix = "!"
-        case TextType.LINK:
-            intances = extraxt_markdown_links(text)
-            appendix = ""
-        case _:
-            raise ValueError("Unsupported TextType")
-
-    # conversion done no more instances
-    if len(intances) == 0:
-        current_list.append(TextNode(text, TextType.TEXT))
-        return current_list
-
-    altText = intances[0][0]
-    url = intances[0][1]
-    split = text.split(f"{appendix}[{altText}]({url})")
-
-    # Second is the image, always
-    if split[0] != "":
-        current_list.append(TextNode(split[0], TextType.TEXT))
-    current_list.append(TextNode(altText, text_type, url))
-
-    # if last element is empty conversion is done
-    if split[1] == "":
-        return current_list
-
-    # Continue splitting
-    return recursive_nodes_images_links_split(split[1], text_type, current_list)
+# step 2 #
 
 
 def markdown_to_blocks(rawMarkdownString: str) -> list[str]:
