@@ -33,7 +33,7 @@ class LeafNode(HTMLNode):
     def __init__(
         self, tag: str | None, value: str, props: Optional[dict[str, str]] = None
     ) -> None:
-        super().__init__(tag, value, props=props)
+        super().__init__(tag, value, None, props)
 
     def __repr__(self) -> str:
         return f"tag:{self.tag}, value:{self.value}, props:{self.props}"

@@ -1,4 +1,5 @@
 import re
+from typing import Optional
 from textnode import TextNode
 from enums import TextType, BlockType
 
