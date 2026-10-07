@@ -1,10 +1,8 @@
-from enums import TextType
-from textnode import TextNode
+from generator import sync_folder
 
 
 def main():
-    node = TextNode("fancy title", TextType.BOLD)
-    print(node)
+    sync_folder("static", "public")
 
 
 main()
