@@ -307,6 +307,10 @@ very cool
         markdown = ">quote on single line space not required"
         self.assertEqual(block_to_blocktype(markdown), BlockType.QUOTE)
 
+    def test_tolkien_post_quote(self):
+        markdown = """> -- J.R.R. Tolkien"""
+        self.assertEqual(block_to_blocktype(markdown), BlockType.QUOTE)
+
     def test_block_to_blocktype_unordered_list(self):
         markdown = """- I am an item
 - so am I!"""

@@ -104,9 +104,9 @@ def block_to_blocktype(markdown: str) -> BlockType:
     lineSplit = markdown.split("\n")
 
     currentBlockType = BlockType.PARAGRAPH
-    if re.search(r"(^>).+", markdown):
+    if re.search(r"(^>)", markdown):
         currentBlockType = BlockType.QUOTE
-    if re.search(r"(- ).+", markdown):
+    if re.search(r"(^- ).+", markdown):
         currentBlockType = BlockType.UNORDERED_LIST
     if re.search(r"(1. .+\n)", markdown):
         currentBlockType = BlockType.ORDERED_LIST
@@ -115,10 +115,10 @@ def block_to_blocktype(markdown: str) -> BlockType:
             case BlockType.PARAGRAPH:
                 return BlockType.PARAGRAPH
             case BlockType.QUOTE:
-                if not re.search(r"(^>).+", line):
+                if not re.search(r"(^>)", line):
                     return BlockType.PARAGRAPH
             case BlockType.UNORDERED_LIST:
-                if not re.search(r"(- ).+", line):
+                if not re.search(r"(^- ).+", line):
                     return BlockType.PARAGRAPH
             case BlockType.ORDERED_LIST:
                 if not re.search(rf"({index+1}. .+)", line):
